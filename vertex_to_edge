@@ -1,0 +1,162 @@
+import java.util.*;
+
+class Vertex {
+    private String label;
+
+    public Vertex(String label) {
+        this.label = label;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Vertex vertex = (Vertex) obj;
+        return Objects.equals(label, vertex.label);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(label);
+    }
+}
+
+class Edge {
+    private Vertex source;
+    private Vertex dest;
+    private Double weight;
+
+    public Edge(Vertex source, Vertex dest, Double weight) {
+        this.source = source;
+        this.dest = dest;
+        this.weight = weight;
+    }
+
+    public Vertex getSource() { return source; }
+    public Vertex getDest() { return dest; }
+    public Double getWeight() { return weight; }
+}
+
+class WeightedGraph {
+    private Map<Vertex, List<Edge>> map = new HashMap<>();
+
+    public void addVertex(Vertex vertex) {
+        map.putIfAbsent(vertex, new ArrayList<>());
+    }
+
+    public void addEdge(Vertex source, Vertex dest, double weight) {
+        map.get(source).add(new Edge(source, dest, weight));
+    }
+
+    public List<Edge> getEdges(Vertex vertex) {
+        return map.getOrDefault(vertex, new ArrayList<>());
+    }
+
+    public Set<Vertex> getVertices() {
+        return map.keySet();
+    }
+}
+
+class Search {
+    protected WeightedGraph graph;
+    protected Vertex start;
+
+    public Search(WeightedGraph graph, Vertex start) {
+        this.graph = graph;
+        this.start = start;
+    }
+}
+
+class BreadthFirstSearch extends Search {
+    public BreadthFirstSearch(WeightedGraph graph, Vertex start) {
+        super(graph, start);
+        bfs(start);
+    }
+
+    private void bfs(Vertex start) {
+        Queue<Vertex> queue = new LinkedList<>();
+        Set<Vertex> visited = new HashSet<>();
+        queue.add(start);
+        visited.add(start);
+
+        while (!queue.isEmpty()) {
+            Vertex current = queue.poll();
+            System.out.println("Visited: " + current.getLabel());
+
+            for (Edge edge : graph.getEdges(current)) {
+                Vertex dest = edge.getDest();
+                if (!visited.contains(dest)) {
+                    visited.add(dest);
+                    queue.add(dest);
+                }
+            }
+        }
+    }
+}
+
+class DijkstraSearch extends Search {
+    public DijkstraSearch(WeightedGraph graph, Vertex start) {
+        super(graph, start);
+        dijkstra(start);
+    }
+
+    private void dijkstra(Vertex start) {
+        Map<Vertex, Double> distances = new HashMap<>();
+        for (Vertex vertex : graph.getVertices()) {
+            distances.put(vertex, Double.MAX_VALUE);
+        }
+        distances.put(start, 0.0);
+
+        PriorityQueue<Vertex> pq = new PriorityQueue<>(Comparator.comparingDouble(distances::get));
+        pq.add(start);
+
+        while (!pq.isEmpty()) {
+            Vertex current = pq.poll();
+
+            for (Edge edge : graph.getEdges(current)) {
+                Vertex dest = edge.getDest();
+                double newDist = distances.get(current) + edge.getWeight();
+
+                if (newDist < distances.get(dest)) {
+                    distances.put(dest, newDist);
+                    pq.add(dest);
+                }
+            }
+        }
+
+        for (Map.Entry<Vertex, Double> entry : distances.entrySet()) {
+            System.out.println("Distance to " + entry.getKey().getLabel() + ": " + entry.getValue());
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        WeightedGraph graph = new WeightedGraph();
+        Vertex a = new Vertex("A");
+        Vertex b = new Vertex("B");
+        Vertex c = new Vertex("C");
+        Vertex d = new Vertex("D");
+
+        graph.addVertex(a);
+        graph.addVertex(b);
+        graph.addVertex(c);
+        graph.addVertex(d);
+
+        graph.addEdge(a, b, 1);
+        graph.addEdge(a, c, 3);
+        graph.addEdge(b, d, 1);
+        graph.addEdge(c, d, 1);
+
+        System.out.println("BFS:");
+        new BreadthFirstSearch(graph, a);
+
+        System.out.println("\nDijkstra:");
+        new DijkstraSearch(graph, a);
+    }
+}
+
